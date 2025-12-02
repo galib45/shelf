@@ -1,0 +1,26 @@
+[package]
+name = "shelf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+async-channel = "2.5.0"
+blake3 = "1.8.2"
+dirs = "6.0.0"
+fuzzy-matcher = "0.3.7"
+gtk = { version = "0.10.2", package = "gtk4", features = ["v4_20"] }
+image = "0.25.9"
+mupdf = "0.5.0"
+r2d2 = "0.8.10"
+r2d2_sqlite = "0.31.0"
+rayon = "1.11.0"
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+serde = { version = "1.0.228", features = ["derive"] }
+
+[build-dependencies]
+glib-build-tools = "0.21.0"
+
+[package.metadata.appimage]
+auto_link = true
+

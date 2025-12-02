@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="ShelfWindow" parent="GtkApplicationWindow">
+    <property name="title">Shelf</property>
+    <!-- <property name="default-width">800</property> -->
+    <!-- <property name="default-height">600</property> -->
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        
+        <!-- Main Content Area -->
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="vexpand">true</property>
+            <property name="spacing">12</property>
+            <property name="margin-start">12</property>
+            <property name="margin-end">12</property>
+            <property name="margin-top">12</property>
+            <property name="margin-bottom">6</property>
+            
+            <!-- Header with Search and Scan Button -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">12</property>
+                
+                <child>
+                  <object class="GtkSearchEntry" id="search_entry">
+                    <property name="placeholder-text">Search by filename, title or author</property>
+                    <property name="hexpand">true</property>
+                    <property name="sensitive">false</property>
+                  </object>
+                </child>
+                
+                <child>
+                  <object class="GtkButton" id="scan_button">
+                    <property name="label">Scan</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Grid View -->
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="vexpand">true</property>
+                <property name="hscrollbar-policy">never</property>
+                
+                <child>
+                  <object class="GtkGridView" id="grid_view">
+                    <property name="margin-start">6</property>
+                    <property name="margin-end">6</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        
+        <!-- Status Bar at Bottom -->
+        <child>
+          <object class="GtkBox" id="status_bar">
+            <property name="orientation">horizontal</property>
+            <property name="spacing">6</property>
+            <property name="margin-start">12</property>
+            <property name="margin-end">12</property>
+            <property name="margin-top">6</property>
+            <property name="margin-bottom">6</property>
+            
+            <style>
+              <class name="statusbar"/>
+            </style>
+            
+            <child>
+              <object class="GtkLabel" id="status_label">
+                <property name="label">Ready</property>
+                <property name="xalign">0</property>
+                <property name="ellipsize">end</property>
+                <property name="hexpand">true</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+            
+            <child>
+              <object class="GtkLabel" id="info_label">
+                <property name="label"></property>
+                <property name="xalign">1</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        
+      </object>
+    </child>
+  </template>
+</interface>
