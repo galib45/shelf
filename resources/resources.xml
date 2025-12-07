@@ -2,5 +2,6 @@
 <gresources>
 <gresource prefix="/org/galib/shelf">
   <file>ui/window.xml</file>	
+  <file>ui/settings_window.xml</file>	
 </gresource>
 </gresources>

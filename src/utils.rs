@@ -10,6 +10,21 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::pdf::ScanProgress;
 
+// https://docs.rs/globmatch/latest/src/globmatch/utils.rs.html#133-145
+pub fn is_hidden_path<P>(path: P) -> bool
+where
+    P: AsRef<Path>,
+{
+    let has_hidden = path.as_ref().components().find(|c| {
+        c.as_os_str()
+            .to_str()
+            .map(|s| s.starts_with('.'))
+            .unwrap_or(false)
+    });
+
+    has_hidden.is_some()
+}
+
 pub fn scan_pdfs_rayon(dir: &PathBuf, tx: async_channel::Sender<ScanProgress>) -> Vec<PathBuf> {
     let mut pdfs = Vec::new();
     let mut subdirs = Vec::new();
@@ -17,6 +32,7 @@ pub fn scan_pdfs_rayon(dir: &PathBuf, tx: async_channel::Sender<ScanProgress>) -
 
     for entry in entries.flatten() {
         let path = entry.path();
+        if is_hidden_path(&path) { continue; }
         if path.is_file() && path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("pdf")) {
             pdfs.push(path.clone());
             let _ = tx.send_blocking(ScanProgress::Found(path));

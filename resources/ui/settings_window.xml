@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<interface>
+  <object class="GtkFileDialog" id="file_dialog">
+  </object>
+
+  <template class="ShelfSettingsWindow" parent="GtkWindow">
+    <property name="modal">true</property>
+    <property name="title">Settings</property>
+    <property name="titlebar">
+      <object class="GtkHeaderBar">
+        <child type="start">
+          <object class="GtkLabel">
+            <binding name="label">
+              <lookup name="title">ShelfSettingsWindow</lookup>
+            </binding>
+            <style>
+              <class name="title-4"/>
+            </style>
+            <property name="margin-start">12</property>
+          </object>
+        </child>
+        <property name="title-widget">
+          <object class="GtkBox"/>
+        </property>
+      </object>
+    </property>
+    <!-- <property name="default-width">500</property> -->
+    <!-- <property name="default-height">400</property> -->
+    <child>
+      <object class="GtkScrolledWindow">
+        <property name="vexpand">true</property>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="hexpand">true</property>
+            <property name="spacing">0</property>
+            <property name="margin-start">16</property>
+            <property name="margin-end">16</property>
+            <property name="margin-top">16</property>
+            <property name="margin-bottom">0</property>
+            <child>
+              <object class="GtkBox">
+                <property name="hexpand">true</property>
+                    <property name="margin-bottom">8</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">Directories to scan</property>
+                    <attributes>
+                      <attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="add_button">
+                    <child>
+                      <object class="GtkBox">
+                        <property name="spacing">6</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="icon-name">list-add-symbolic</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label">Add directory</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkBox" id="dirs_list">
+                <property name="orientation">vertical</property>
+                <property name="spacing">4</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

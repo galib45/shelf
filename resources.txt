@@ -1,3 +1,25 @@
+// resources/resources.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+<gresource prefix="/org/galib/shelf">
+  <file>ui/window.xml</file>	
+  <file>ui/settings_window.xml</file>	
+</gresource>
+</gresources>
+
+// resources/ui/settings_window.xml
+<interface>
+  <template class="ShelfSettingsWindow" parent="GtkWindow">
+    <property name="modal">true</property>
+    <child>
+      <object class="GtkLabel">
+        <property name="label">Hudai</property>
+      </object>
+    </child>
+  </template>
+</interface>
+
+// resources/ui/window.xml
 <interface>
   <template class="ShelfWindow" parent="GtkApplicationWindow">
     <property name="title">Shelf</property>
@@ -6,11 +28,10 @@
       <object class="GtkHeaderBar">
       <child type="start">
         <object class="GtkLabel" id="app_title">
-        <binding name="label">
-          <lookup name="title">ShelfWindow</lookup>
-        </binding>
-        <style><class name="title-4"/></style>
-        <property name="margin-start">12</property>
+          <property name="label" translatable="yes">Shelf</property>
+          <style>
+            <class name="title"/>
+          </style>
         </object>
       </child>
       
@@ -132,3 +153,4 @@
 
   </template>
 </interface>
+
