@@ -389,22 +389,39 @@ impl ShelfWindow {
         imp.grid_view.set_max_columns(6);
         imp.grid_view.set_single_click_activate(false);
 
+        let config = imp.config.get().unwrap();
         imp.grid_view.connect_activate(glib::clone!(
             #[strong] model,
+            #[strong] config,
             move |_, position| {
                 let item = model.item(position).unwrap();
                 let metadata_object = item.downcast_ref::<PdfMetadataObject>().unwrap(); 
                 if let Some(metadata) = metadata_object.metadata() {
                     let path = metadata.path.clone();
                     // Spawn Zathura in a separate process
-                    std::thread::spawn(move || {
-                        match Command::new("zathura")
-                            .arg(path.as_str())
-                            .spawn() {
-                            Ok(_) => println!("Opened {} with Zathura", path),
-                            Err(e) => eprintln!("Failed to open {}: {}", path, e),
+                    let config_reader = config.read().unwrap();
+                    let mut cmd = config_reader.pdf_viewer_command.clone();
+                    cmd = if cmd.contains("%") {
+                        cmd.replace("%", &path)
+                    } else {
+                        cmd.push_str(" ");
+                        cmd.push_str(&path);
+                        cmd
+                    };
+                    let parts: Vec<String> = cmd.split_whitespace().map(|s| s.to_string()).collect();
+                    std::thread::spawn(glib::clone!(
+                        #[strong] parts,
+                        move || {
+                            let program = &parts[0];
+                            let args = &parts[1..];
+                            match Command::new(program)
+                                .args(args)
+                                .spawn() {
+                                Ok(_) => println!("Opened {} with Zathura", path),
+                                Err(e) => eprintln!("Failed to open {}: {}", path, e),
+                            }
                         }
-                    });
+                    ));
                 } 
             }
         ));

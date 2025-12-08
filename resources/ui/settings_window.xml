@@ -2,7 +2,6 @@
 <interface>
   <object class="GtkFileDialog" id="file_dialog">
   </object>
-
   <template class="ShelfSettingsWindow" parent="GtkWindow">
     <property name="modal">true</property>
     <property name="title">Settings</property>
@@ -41,10 +40,77 @@
             <child>
               <object class="GtkBox">
                 <property name="hexpand">true</property>
-                    <property name="margin-bottom">8</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">PDF Viewer Command</property>
+                    <property name="valign">end</property>
+                    <attributes>
+                      <attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">% will be replaced by the filepath</property>
+                    <property name="valign">end</property>
+                    <property name="margin-start">8</property>
+                    <attributes>
+                      <attribute name="size" value="8960"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="orientation">horizontal</property>
+                <property name="margin-top">8</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="margin-top">8</property>
+                <property name="hexpand">true</property>
+                <child>
+                  <object class="GtkEntry" id="command_entry">
+                    <property name="hexpand">true</property>
+                    <property name="margin-end">16</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="edit_button">
+                    <child>
+                      <object class="GtkBox">
+                        <property name="spacing">6</property>
+                        <child>
+                          <object class="GtkImage" id="edit_button_icon">
+                            <property name="icon-name">document-edit-symbolic</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="edit_button_label">
+                            <property name="label">Edit</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="hexpand">true</property>
+                <property name="margin-top">24</property>
                 <child>
                   <object class="GtkLabel">
                     <property name="label">Directories to scan</property>
+                    <property name="valign">end</property>
                     <attributes>
                       <attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
                     </attributes>
@@ -77,7 +143,14 @@
               </object>
             </child>
             <child>
+              <object class="GtkSeparator">
+                <property name="orientation">horizontal</property>
+                <property name="margin-top">8</property>
+              </object>
+            </child>
+            <child>
               <object class="GtkBox" id="dirs_list">
+                <property name="margin-top">8</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">4</property>
               </object>

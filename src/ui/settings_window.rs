@@ -27,6 +27,14 @@ mod imp {
         #[template_child]
         pub add_button: TemplateChild<gtk::Button>,
         #[template_child]
+        pub edit_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub edit_button_icon: TemplateChild<gtk::Image>,
+        #[template_child]
+        pub edit_button_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub command_entry: TemplateChild<gtk::Entry>,
+        #[template_child]
         pub file_dialog: TemplateChild<gtk::FileDialog>,
 
         // Store the current directories
@@ -81,6 +89,39 @@ impl ShelfSettingsWindow {
         // Load config
         // let config = Config::load().unwrap();
         // *imp.dirs.borrow_mut() = config.scan_dirs.clone();
+
+        imp.command_entry.set_sensitive(false);
+
+        let config = imp.config.get().unwrap();
+        {
+            let config_reader = config.read().unwrap();
+            imp.command_entry.set_text(&config_reader.pdf_viewer_command);
+        }
+
+        imp.edit_button.connect_clicked(glib::clone!(
+            #[strong] config,
+            #[weak(rename_to = _self)] self,
+            #[weak(rename_to = entry)] imp.command_entry,
+            #[weak(rename_to = icon)] imp.edit_button_icon,
+            #[weak(rename_to = label)] imp.edit_button_label,
+            move |_| {
+                if label.text() == "Edit" { 
+                    entry.set_sensitive(true);
+                    entry.grab_focus();
+                    label.set_text("Save");
+                    icon.set_icon_name(Some("folder-documents-symbolic"));
+                } else { 
+                    {
+                        let mut config_writer = config.write().unwrap();
+                        config_writer.pdf_viewer_command = entry.text().to_string();
+                    }
+                    _self.save_config();
+                    entry.set_sensitive(false);
+                    label.set_text("Edit"); 
+                    icon.set_icon_name(Some("document-edit-symbolic"));
+                }
+            }        
+        ));
         
         // Setup add button
         let clone = self.clone();
