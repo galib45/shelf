@@ -124,18 +124,25 @@ impl ShelfSettingsWindow {
         ));
         
         // Setup add button
-        let clone = self.clone();
-        imp.add_button.connect_clicked( move |_| {
-            let _self = clone.clone();
-            // clone.show_add_directory_dialog();
-            clone.imp().file_dialog.select_folder(Some(&clone), None::<&gio::Cancellable>, move |result| {
-                if let Ok(file) = result {
-                    if let Some(path) = file.path() {
-                        _self.add_directory(path);
+        // let clone = self.clone();
+        imp.add_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = _self)] self,
+            move |_| {
+                // let _self = clone.clone();
+                // clone.show_add_directory_dialog();
+                let imp = _self.imp();
+                imp.file_dialog.select_folder(Some(&_self), None::<&gio::Cancellable>, glib::clone!(
+                    #[weak] _self,
+                    move |result| {
+                        if let Ok(file) = result {
+                            if let Some(path) = file.path() {
+                                _self.add_directory(path);
+                            }
+                        }
                     }
-                }
-            });
-        });
+                ));
+            }
+        ));
         
         // Populate the list
         self.refresh_directory_list();
