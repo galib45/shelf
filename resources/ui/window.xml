@@ -1,94 +1,190 @@
+<?xml version="1.0"?>
 <interface>
   <template class="ShelfWindow" parent="GtkApplicationWindow">
     <property name="title">Shelf</property>
-    
+    <property name="default-width">800</property>
+    <!-- Title Bar -->
     <property name="titlebar">
       <object class="GtkHeaderBar">
-      <child type="start">
-        <object class="GtkLabel" id="app_title">
-        <binding name="label">
-          <lookup name="title">ShelfWindow</lookup>
-        </binding>
-        <style><class name="title-4"/></style>
-        <property name="margin-start">12</property>
-        </object>
-      </child>
-      
-      <property name="title-widget"><object class="GtkBox"></object></property>
-
-      <child type="end">
-        <object class="GtkBox">
-
-        <child>
-            <object class="GtkSearchEntry" id="search_entry">
-              <property name="placeholder-text">Search by filename, title or author</property>
-              <property name="hexpand">true</property>
-              <property name="visible">false</property>
-              <property name="margin-end">8</property>
+        <child type="start">
+          <object class="GtkLabel" id="app_title">
+            <binding name="label">
+              <lookup name="title">ShelfWindow</lookup>
+            </binding>
+            <style>
+              <class name="title-4"/>
+            </style>
+            <property name="margin-start">12</property>
+          </object>
+        </child>
+        <property name="title-widget">
+          <object class="GtkBox"/>
+        </property>
+        <child type="end">
+          <object class="GtkBox">
+            <child>
+              <object class="GtkSearchEntry" id="search_entry">
+                <property name="placeholder-text">Search by filename, title or author</property>
+                <property name="hexpand">true</property>
+                <property name="visible">false</property>
+                <property name="margin-end">8</property>
               </object>
-        </child>
-
-        <child>
-          <object class="GtkButton" id="search_button">
-            <property name="icon_name">system-search-symbolic</property>
-            <property name="tooltip_text">Search</property>
+            </child>
+            <child>
+              <object class="GtkButton" id="search_button">
+                <property name="icon_name">system-search-symbolic</property>
+                <property name="tooltip_text">Search</property>
+              </object>
+            </child>
+            <!-- Refresh Button -->
+            <child>
+              <object class="GtkButton" id="refresh_button">
+                <property name="icon_name">view-refresh-symbolic</property>
+                <property name="tooltip_text">Rescan directories (F5)</property>
+              </object>
+            </child>
+            <!-- Settings Button -->
+            <child>
+              <object class="GtkButton" id="settings_button">
+                <property name="icon_name">emblem-system-symbolic</property>
+                <property name="tooltip_text">Settings</property>
+              </object>
+            </child>
+            <!-- Preview Toggle Button -->
+            <child>
+              <object class="GtkButton" id="preview_toggle_button">
+                <property name="icon_name">sidebar-show-symbolic</property>
+                <property name="tooltip_text">Toggle Preview Pane</property>
+              </object>
+            </child>
           </object>
         </child>
-
-        <!-- Refresh Button -->
-        <child>
-          <object class="GtkButton" id="refresh_button">
-            <property name="icon_name">view-refresh-symbolic</property>
-            <property name="tooltip_text">Rescan directories (F5)</property> 
-          </object>
-        </child>
-
-        <!-- Settings Button -->
-        <child>
-          <object class="GtkButton" id="settings_button">
-            <property name="icon_name">emblem-system-symbolic</property>
-            <property name="tooltip_text">Settings</property> 
-          </object>
-        </child>
-      </object>
-      </child>
       </object>
     </property>
-
     <!-- Main Window Layout -->
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
-
         <!-- Main Content Area -->
         <child>
           <object class="GtkBox">
             <property name="orientation">vertical</property>
             <property name="vexpand">true</property>
-            <property name="spacing">12</property>
-            <property name="margin-start">12</property>
-            <property name="margin-end">12</property>
-            <property name="margin-top">12</property>
-            <property name="margin-bottom">6</property> 
-
-            <!-- Grid View -->
+            <!-- <property name="spacing">12</property> -->
+            <property name="margin-start">16</property>
+            <property name="margin-end">16</property>
+            <property name="margin-top">16</property>
+            <property name="margin-bottom">6</property>
+            <!-- container -->
             <child>
-              <object class="GtkScrolledWindow">
+              <!-- Replace GtkBox with GtkPaned -->
+              <object class="GtkPaned" id="paned">
+                <property name="orientation">horizontal</property>
                 <property name="vexpand">true</property>
-                <property name="hscrollbar-policy">never</property>
-
+                <property name="hexpand">true</property>
+                <property name="position">1024</property>
+                <!-- Initial position of the sash -->
                 <child>
-                  <object class="GtkGridView" id="grid_view">
-                    <property name="margin-start">6</property>
-                    <property name="margin-end">6</property>
+                  <object class="GtkBox" id="left_pane">
+                    <!-- Grid View -->
+                    <child>
+                      <object class="GtkScrolledWindow">
+                        <property name="vexpand">true</property>
+                        <property name="hexpand">true</property>
+                        <child>
+                          <object class="GtkGridView" id="grid_view">
+                            <property name="margin-start">6</property>
+                            <property name="margin-end">6</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox" id="right_pane">
+                    <property name="margin-start">16</property>
+                    <!-- Removed width-request: GtkPaned handles width, and min_width will be enforced programmatically -->
+                    <property name="visible">true</property>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">6</property> 
+                        <child>
+                          <object class="GtkLabel" id="preview_title">
+                            <property name="label">(untitled)</property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                            <style>
+                              <class name="title-3"/> <!-- Make title larger -->
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_filename">
+                            <property name="label">Filename: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_filepath">
+                            <property name="label">Location: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_author">
+                            <property name="label">Author: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_subject">
+                            <property name="label">Subject: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_keywords">
+                            <property name="label">Keywords: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_pages">
+                            <property name="label">Pages: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="preview_filesize">
+                            <property name="label">Size: </property>
+                            <property name="halign">start</property>
+                            <property name="wrap">true</property>
+                            <property name="use-markup">true</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
             </child>
-
           </object>
         </child>
-
         <!-- Status Bar -->
         <child>
           <object class="GtkBox" id="status_bar">
@@ -101,7 +197,6 @@
             <style>
               <class name="statusbar"/>
             </style>
-
             <child>
               <object class="GtkLabel" id="status_label">
                 <property name="label">Ready</property>
@@ -113,22 +208,9 @@
                 </style>
               </object>
             </child>
-
-            <child>
-              <object class="GtkLabel" id="info_label">
-                <property name="label"></property>
-                <property name="xalign">1</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
-
           </object>
         </child>
-
       </object>
     </child>
-
   </template>
 </interface>

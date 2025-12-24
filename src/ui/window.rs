@@ -12,6 +12,7 @@ use gtk::{prelude::*, SignalListItemFactory, SingleSelection};
 use gtk::glib;
 use gtk::gio;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::config::Config;
 use crate::pdf::{extract_pdf_metadata, PdfCache, PdfMetadata, ScanProgress};
@@ -22,7 +23,7 @@ use crate::utils::scan_pdfs_rayon;
 use super::models;
 
 mod imp {
-    use std::cell::OnceCell;
+    use std::cell::{OnceCell, RefCell};
     use std::sync::{Arc, Mutex, RwLock};
 
     use gtk::glib;
@@ -36,8 +37,6 @@ mod imp {
     #[template(resource = "/org/galib/shelf/ui/window.xml")]
     pub struct ShelfWindow {
         #[template_child]
-        pub info_label: TemplateChild<gtk::Label>,
-        #[template_child]
         pub refresh_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub settings_button: TemplateChild<gtk::Button>,
@@ -49,11 +48,44 @@ mod imp {
         pub status_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub grid_view: TemplateChild<gtk::GridView>,
+        #[template_child]
+        pub preview_title: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_filename: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_filepath: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_author: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_subject: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_keywords: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_pages: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_filesize: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub preview_toggle_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub right_pane: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub paned: TemplateChild<gtk::Paned>,
+        // author,
+        // subject,
+        // keywords,
+        // creator,
+        // producer,
+        // creation_date,
+        // modification_date,
+        // page_count,
+        // cover_path,
+        // file_size,
 
         // Store for PDF files
         pub metadata_list: Arc<Mutex<Vec<PdfMetadata>>>, 
         pub selected: Arc<Mutex<Option<PdfMetadata>>>,
         pub config: OnceCell<Arc<RwLock<Config>>>,
+        pub width: RefCell<i32>,
     }
 
     #[glib::object_subclass]
@@ -98,15 +130,78 @@ impl ShelfWindow {
         obj
     }
 
+    // Helper for file size conversion
+    fn format_human_readable_file_size(bytes: u64) -> String {
+        if bytes < 1024 {
+            format!("{} B", bytes)
+        } else if bytes < 1024 * 1024 {
+            format!("{:.2} KB", bytes as f64 / 1024.0)
+        } else if bytes < 1024 * 1024 * 1024 {
+            format!("{:.2} MB", bytes as f64 / (1024.0 * 1024.0))
+        } else {
+            format!("{:.2} GB", bytes as f64 / (1024.0 * 1024.0 * 1024.0))
+        }
+    }
+
+    fn process_option_string(value: &Option<String>) -> String {
+        let mut output = value.as_deref().unwrap_or("(N/A)").to_string();
+        if output.is_empty() { output.push_str("(empty)"); }
+        
+        let max_len = 100;
+        let graphemes: Vec<&str> = output.graphemes(true).collect();
+        if graphemes.len() <= max_len { return output; }
+        return format!("{} ...", graphemes[..max_len].concat());
+    }
+
+    fn update_preview_display(&self, metadata: &crate::pdf::PdfMetadata) {
+        let imp = self.imp();
+
+        let title_text = metadata.title.as_deref().map_or_else(
+            || "(untitled)".to_string(),
+            |s| if s.trim().is_empty() { "(untitled)".to_string() } else { s.to_string() }
+        );
+        imp.preview_title.set_text(&title_text);
+
+        let path_buf = PathBuf::from(&metadata.path);
+        let filename = path_buf.file_name().and_then(|s| s.to_str()).unwrap_or("(N/A)");
+        let filedir = path_buf.parent().and_then(|s| s.to_str()).unwrap_or("(N/A)");
+        imp.preview_filename.set_markup(
+            &format!("<i>{}</i>", glib::markup_escape_text(filename))
+        );
+        imp.preview_filepath.set_markup(&filedir);
+
+        imp.preview_author.set_markup(&format!("<b>Author:</b> {}", Self::process_option_string(&metadata.author)));
+        imp.preview_subject.set_markup(&format!("<b>Subject:</b> {}", Self::process_option_string(&metadata.subject)));
+        imp.preview_keywords.set_markup(&format!("<b>Keywords:</b> {}", Self::process_option_string(&metadata.keywords)));
+        imp.preview_pages.set_text(&format!("{} pages", &metadata.page_count));
+        
+        let formatted_size = Self::format_human_readable_file_size(metadata.file_size);
+        imp.preview_filesize.set_text(&formatted_size);
+    }
+
     fn setup(&self) {
         let imp = self.imp();
+        self.connect_realize(move |_self| {
+            if let Some(surface) = _self.surface() {
+                // THIS is what fires on actual resize
+                surface.connect_layout(glib::clone!(
+                    #[weak(rename_to = imp)] _self.imp(),
+                    move |_surface, width, _height| {
+                        if *imp.width.borrow() != width {
+                            *imp.width.borrow_mut() = width;
+                            imp.paned.set_position(width * 7/ 10);
+                        }
+                    }
+                ));
+            }
+        });
         let model = gio::ListStore::new::<models::PdfMetadataObject>();
         self.setup_grid_view(model.clone());
         self.setup_buttons(model.clone());
         self.setup_search_entry(model.clone());
         imp.refresh_button.emit_clicked();
-    } 
-
+    }
+    
     fn setup_search_entry(&self, model: gio::ListStore) {
         let imp = self.imp();
         imp.search_entry.connect_search_changed(glib::clone!(
@@ -114,6 +209,7 @@ impl ShelfWindow {
             #[strong(rename_to = selected)] imp.selected,
             #[strong(rename_to = metadata_list)] imp.metadata_list,
             #[weak(rename_to = status_label)] imp.status_label,
+            #[weak(rename_to = _self)] self,
             move |entry| {
                 let query = entry.text();
                 
@@ -132,6 +228,7 @@ impl ShelfWindow {
                         let mut selected = selected.lock().unwrap();
                         *selected = Some(pdf_files[0].clone());
                         status_label.set_text(&pdf_files[0].path); 
+                        _self.update_preview_display(&pdf_files[0]);
                     }
                      
                 } else {
@@ -165,6 +262,7 @@ impl ShelfWindow {
                         let mut selected = selected.lock().unwrap();
                         *selected = Some(scored[0].0.clone());
                         status_label.set_text(&scored[0].0.path); 
+                        _self.update_preview_display(&scored[0].0);
                     }
                     for (metadata, _) in scored {
                         model.append(&PdfMetadataObject::new(metadata.clone()));
@@ -193,6 +291,14 @@ impl ShelfWindow {
             }
         ));
 
+        imp.preview_toggle_button.connect_clicked(glib::clone!(
+            #[weak(rename_to = right_pane)] imp.right_pane,
+            move |_| {
+                let is_visible = right_pane.is_visible();
+                right_pane.set_visible(!is_visible);
+            }
+        ));
+
         imp.refresh_button.connect_clicked(glib::clone!(
             #[strong] model,
             #[strong] config,
@@ -202,6 +308,7 @@ impl ShelfWindow {
             #[weak(rename_to = search_button)] imp.search_button,
             #[weak(rename_to = search_entry)] imp.search_entry,
             #[weak(rename_to = status_label)] imp.status_label,
+            #[weak(rename_to = _self)] self,
             move |_| {
                 // Disable button during scan
                 refresh_button.set_sensitive(false);
@@ -261,6 +368,7 @@ impl ShelfWindow {
                     #[strong] model,
                     #[strong] selected,
                     #[strong] metadata_list,
+                    #[weak] _self,
                     async move {
                         use std::cell::Cell;
                         let count = Cell::new(0);
@@ -300,6 +408,7 @@ impl ShelfWindow {
                                         let mut files = metadata_list.lock().unwrap();
                                         *files = metadata_list_new;
                                         *selected = Some(files[0].clone());
+                                        _self.update_preview_display(&files[0]); 
                                     }
           
                                     refresh_button.set_sensitive(true);
@@ -323,13 +432,25 @@ impl ShelfWindow {
         let factory = SignalListItemFactory::new();
 
         selection_model.connect_selection_changed(glib::clone!(
-            #[strong(rename_to = selected)] imp.selected, 
-            move |_self, _, _| {
-                let item = _self.selected_item().unwrap();
+            #[strong(rename_to = selected)] imp.selected,
+            #[weak(rename_to = _self)] self,
+            // #[weak(rename_to = preview_title)] imp.preview_title,
+            // #[weak(rename_to = preview_filename)] imp.preview_filename,
+            // #[weak(rename_to = preview_filepath)] imp.preview_filepath,
+            // #[weak(rename_to = preview_author)] imp.preview_author,
+            // #[weak(rename_to = preview_subject)] imp.preview_subject,
+            // #[weak(rename_to = preview_keywords)] imp.preview_keywords,
+            // #[weak(rename_to = preview_pages)] imp.preview_pages,
+            // #[weak(rename_to = preview_filesize)] imp.preview_filesize,
+            move |sel_model, _, _| {
+                let item = sel_model.selected_item().unwrap();
                 let metadata_object = item.downcast_ref::<PdfMetadataObject>().unwrap();
                 {
                     let mut selected = selected.lock().unwrap();
                     *selected = metadata_object.metadata();
+                    let metadata = selected.as_ref().unwrap().to_owned();
+
+                    _self.update_preview_display(&metadata);
                 }
             }
         ));
@@ -401,24 +522,24 @@ impl ShelfWindow {
                     // Spawn Zathura in a separate process
                     let config_reader = config.read().unwrap();
                     let mut cmd = config_reader.pdf_viewer_command.clone();
-                    cmd = if cmd.contains("%") {
-                        cmd.replace("%", &path)
-                    } else {
-                        cmd.push_str(" ");
-                        cmd.push_str(&path);
-                        cmd
-                    };
-                    let parts: Vec<String> = cmd.split_whitespace().map(|s| s.to_string()).collect();
+                    if !cmd.contains("%") { cmd.push_str(" %"); }
+
                     std::thread::spawn(glib::clone!(
-                        #[strong] parts,
+                        #[strong] cmd,
                         move || {
-                            let program = &parts[0];
-                            let args = &parts[1..];
-                            match Command::new(program)
-                                .args(args)
-                                .spawn() {
-                                Ok(_) => println!("Opened {} with Zathura", path),
-                                Err(e) => eprintln!("Failed to open {}: {}", path, e),
+                            let mut parts: Vec<String> = cmd.split_whitespace().map(|s| s.to_string()).collect();
+                            if let Some((program, args)) = parts.split_first_mut() {
+                                for arg in args.into_iter() {
+                                    if arg == "%" {
+                                        *arg = path.clone();
+                                    }
+                                }
+                                match Command::new(program)
+                                    .args(args)
+                                    .spawn() {
+                                    Ok(_) => println!("Opened {} with Zathura", path),
+                                    Err(e) => eprintln!("Failed to open {}: {}", path, e),
+                                }
                             }
                         }
                     ));
